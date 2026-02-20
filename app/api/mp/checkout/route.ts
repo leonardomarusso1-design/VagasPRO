@@ -3,9 +3,10 @@ import { NextRequest } from "next/server";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
-    const { plan = "PRO", hasBump = false } = body as {
+    const { plan = "PRO", hasBump = false, buyerEmail } = body as {
       plan?: "PRO" | "BASIC";
       hasBump?: boolean;
+      buyerEmail?: string;
     };
 
     if (!process.env.MP_ACCESS_TOKEN) {
@@ -45,9 +46,8 @@ export async function POST(req: NextRequest) {
         pending: `${baseUrl}?success=false`,
       },
       auto_return: "approved",
-      payment_methods: {
-        default_payment_method_id: "pix",
-      },
+      binary_mode: true,
+      payer: buyerEmail ? { email: buyerEmail } : undefined,
       statement_descriptor: "VagaPRO",
     };
 

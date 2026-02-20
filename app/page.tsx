@@ -117,6 +117,7 @@ export default function Page() {
         body: JSON.stringify({
           plan: selectedPlanForCheckout === PlanType.PRO ? "PRO" : "BASIC",
           hasBump: orderBumpActive,
+          buyerEmail: userData?.email || undefined,
         }),
       });
       const data = await res.json();
