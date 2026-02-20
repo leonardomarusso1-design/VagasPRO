@@ -74,16 +74,20 @@ export default function Page() {
 
   const handleQuizComplete = async (data: UserData) => {
     setUserData(data);
-    const creditsStr = localStorage.getItem("vagaspro_credits");
-    const credits = creditsStr ? parseInt(creditsStr, 10) : 0;
-    if (credits <= 0) {
-      alert("Você não possui créditos para gerar novos currículos. Selecione um plano para continuar.");
-      setStep(AppStep.CHECKOUT);
-      return;
-    }
-    localStorage.setItem("vagaspro_credits", String(credits - 1));
+    // Se estiver logado e sem créditos, impedir geração
+    try {
+      const me = await fetch("/api/auth/me").then((r) => r.json());
+      if (me?.user) {
+        const credits = parseInt(localStorage.getItem("vagaspro_credits") || "0", 10);
+        if (!credits || credits <= 0) {
+          alert("Você não possui créditos para gerar novos currículos. Selecione um plano para continuar.");
+          setStep(AppStep.CHECKOUT);
+          return;
+        }
+      }
+    } catch {}
     setStep(AppStep.ANALYZING);
-
+    
     const startTime = Date.now();
     try {
       const generated = await generateOptimizedResume(data);
@@ -93,6 +97,16 @@ export default function Page() {
       setTimeout(() => {
         setResumeContent(generated);
         setStep(AppStep.PREVIEW);
+        // Se estiver logado, consumir 1 crédito
+        (async () => {
+          try {
+            const me = await fetch("/api/auth/me").then((r) => r.json());
+            if (me?.user) {
+              const credits = parseInt(localStorage.getItem("vagaspro_credits") || "0", 10);
+              if (credits > 0) localStorage.setItem("vagaspro_credits", String(credits - 1));
+            }
+          } catch {}
+        })();
       }, Math.max(0, minDelay - elapsed));
     } catch (e) {
       console.error(e);
@@ -117,32 +131,7 @@ export default function Page() {
     }
   };
 
-  const handlePayment = async (provider: "stripe" | "mercadopago") => {
-    try {
-      setPaymentProcessing(true);
-      const endpoint = provider === "mercadopago" ? "/api/mp/checkout" : "/api/checkout";
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          plan: selectedPlanForCheckout === PlanType.PRO ? "PRO" : "BASIC",
-          hasBump: orderBumpActive,
-          buyerEmail: userData?.email || undefined,
-        }),
-      });
-      const data = await res.json();
-      if (data?.url) {
-        window.location.href = data.url;
-      } else {
-        setPaymentProcessing(false);
-        if (data?.error) {
-          alert(typeof data.error === "string" ? data.error : JSON.stringify(data.error));
-        }
-      }
-    } catch {
-      setPaymentProcessing(false);
-    }
-  };
+  const handlePayment = async (_provider?: any) => {};
 
   const hasModernAccess = () => {
     if (plan === PlanType.PRO) return true;
@@ -177,8 +166,6 @@ export default function Page() {
         plan={selectedPlanForCheckout}
         orderBumpActive={orderBumpActive}
         onToggleBump={() => setOrderBumpActive(!orderBumpActive)}
-        onPayment={handlePayment}
-        isProcessing={paymentProcessing}
         onBack={() => setStep(AppStep.PREVIEW)}
         onPlanChange={(p) => setSelectedPlanForCheckout(p)}
       />

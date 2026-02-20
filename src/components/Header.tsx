@@ -6,6 +6,8 @@ import { LogOut } from "lucide-react";
 export function Header() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [plan, setPlan] = useState<string | null>(null);
+  const [credits, setCredits] = useState<number>(0);
 
   useEffect(() => {
     (async () => {
@@ -16,6 +18,21 @@ export function Header() {
       } catch {}
       setLoading(false);
     })();
+
+    const readCredits = () => {
+      const p = localStorage.getItem("vagaspro_plan");
+      setPlan(p);
+      const c = parseInt(localStorage.getItem("vagaspro_credits") || "0", 10);
+      setCredits(isNaN(c) ? 0 : c);
+    };
+    readCredits();
+    const onStorage = () => readCredits();
+    window.addEventListener("storage", onStorage);
+    const t = setInterval(readCredits, 2000);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      clearInterval(t);
+    };
   }, []);
 
   const handleLogin = async () => {
@@ -44,7 +61,12 @@ export function Header() {
       <div className="font-bold text-white tracking-tight">
         Vagas<span className="text-blue-500">PRO</span>
       </div>
-      <div>
+      <div className="flex items-center gap-4">
+        {!loading && (
+          <div className="text-xs text-slate-300 hidden sm:block">
+            Plano: <span className="font-bold">{plan === "PRO" ? "PRO" : plan === "BASIC" ? "Básico" : "Nenhum"}</span> • Créditos: <span className="font-bold">{credits}</span>
+          </div>
+        )}
         {loading ? (
           <span className="text-slate-400 text-sm">...</span>
         ) : user ? (

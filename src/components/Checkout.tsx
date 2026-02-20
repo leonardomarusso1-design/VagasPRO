@@ -1,14 +1,12 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { PlanType } from "@/types";
-import { Check, ShieldCheck, Zap, ArrowLeft, Star } from "lucide-react";
+import { Check, ShieldCheck, Zap, ArrowLeft, Star, Copy, X } from "lucide-react";
 
 interface CheckoutProps {
   plan: PlanType;
   orderBumpActive: boolean;
   onToggleBump: () => void;
-  onPayment: (provider: "stripe" | "mercadopago") => void;
-  isProcessing: boolean;
   onBack: () => void;
   onPlanChange: (plan: PlanType) => void;
 }
@@ -17,16 +15,75 @@ export const Checkout: React.FC<CheckoutProps> = ({
   plan,
   orderBumpActive,
   onToggleBump,
-  onPayment,
-  isProcessing,
   onBack,
   onPlanChange,
 }) => {
-  const [provider, setProvider] = useState<"stripe" | "mercadopago">("mercadopago");
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [pixOpen, setPixOpen] = useState(false);
+  const [qrBase64, setQrBase64] = useState<string | null>(null);
+  const [pixCode, setPixCode] = useState<string | null>(null);
+  const [paymentId, setPaymentId] = useState<string | null>(null);
+  const [status, setStatus] = useState<string>("pending");
   const isPro = plan === PlanType.PRO;
   const basePrice = isPro ? 22.7 : 5.7;
   const bumpPrice = 2.7;
   const total = basePrice + (orderBumpActive ? bumpPrice : 0);
+
+  useEffect(() => {
+    let timer: any;
+    if (pixOpen && paymentId) {
+      timer = setInterval(async () => {
+        try {
+          const res = await fetch(`/api/mp/status?payment_id=${paymentId}`);
+          const data = await res.json();
+          if (data?.status === "approved") {
+            setStatus("approved");
+            const params = new URLSearchParams({
+              success: "true",
+              plan: isPro ? "PRO" : "BASIC",
+              bump: orderBumpActive ? "true" : "false",
+            });
+            window.location.href = `${window.location.origin}?${params.toString()}`;
+          }
+        } catch {}
+      }, 3000);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [pixOpen, paymentId, isPro, orderBumpActive]);
+
+  const handlePayPix = async () => {
+    try {
+      setIsProcessing(true);
+      const me = await fetch("/api/auth/me").then((r) => r.json()).catch(() => ({ user: null }));
+      if (!me?.user) {
+        const go = await fetch("/api/auth/google").then((r) => r.json()).catch(() => null);
+        if (go?.url) window.location.href = go.url;
+        setIsProcessing(false);
+        return;
+      }
+      const res = await fetch("/api/mp/pix", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          plan: isPro ? "PRO" : "BASIC",
+          hasBump: orderBumpActive,
+          buyerEmail: me.user.email,
+        }),
+      });
+      const data = await res.json();
+      if (data?.qr_base64 && data?.payment_id) {
+        setQrBase64(data.qr_base64);
+        setPixCode(data.qr_code || null);
+        setPaymentId(String(data.payment_id));
+        setPixOpen(true);
+      }
+      setIsProcessing(false);
+    } catch {
+      setIsProcessing(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4 font-sans relative overflow-hidden">
@@ -137,14 +194,7 @@ export const Checkout: React.FC<CheckoutProps> = ({
           <h3 className="text-xl font-bold text-white mb-6">Pagamento</h3>
           
           <div className="space-y-4 mb-8">
-            <div
-              className={`p-4 rounded-xl flex items-center justify-between cursor-pointer ${
-                provider === "mercadopago"
-                  ? "border border-emerald-500/50 bg-emerald-500/10"
-                  : "border border-white/10 bg-slate-950/50"
-              }`}
-              onClick={() => setProvider("mercadopago")}
-            >
+            <div className="p-4 rounded-xl flex items-center justify-between cursor-default border border-emerald-500/50 bg-emerald-500/10">
               <div className="flex items-center gap-3">
                 <div className="w-4 h-4 rounded-full border-2 border-emerald-500 flex items-center justify-center">
                   <div className="w-2 h-2 bg-emerald-500 rounded-full" />
@@ -153,34 +203,10 @@ export const Checkout: React.FC<CheckoutProps> = ({
               </div>
               <img src="https://http2.mlstatic.com/frontend-assets/mp-web-navigation/ui-library/svgs/mercadopago-logo.svg" alt="Mercado Pago" className="h-6 opacity-70 invert" />
             </div>
-
-            <div
-              className={`p-4 rounded-xl flex items-center justify-between cursor-pointer ${
-                provider === "stripe"
-                  ? "border border-blue-500/50 bg-blue-500/10"
-                  : "border border-white/10 bg-slate-950/50"
-              }`}
-              onClick={() => setProvider("stripe")}
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-4 h-4 rounded-full border-2 border-blue-500 flex items-center justify-center">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full" />
-                </div>
-                <span className="font-medium text-white">Stripe (Cartão / Pix quando disponível)</span>
-              </div>
-              <img src="https://upload.wikimedia.org/wikipedia/commons/b/ba/Stripe_Logo%2C_revised_2016.svg" alt="Stripe" className="h-6 opacity-70 invert" />
-            </div>
-            
-            <div className="p-4 border border-white/5 bg-slate-950/50 rounded-xl flex items-center justify-between opacity-50 cursor-not-allowed">
-              <div className="flex items-center gap-3">
-                <div className="w-4 h-4 rounded-full border-2 border-slate-600" />
-                <span className="font-medium text-slate-400">PayPal (Indisponível)</span>
-              </div>
-            </div>
           </div>
 
           <Button 
-            onClick={() => onPayment(provider)} 
+            onClick={handlePayPix} 
             fullWidth 
             size="lg" 
             variant="secondary"
@@ -190,9 +216,36 @@ export const Checkout: React.FC<CheckoutProps> = ({
             {isProcessing ? "Processando..." : `Pagar R$ ${total.toFixed(2).replace(".", ",")} Agora`}
           </Button>
           
-          <p className="text-center text-slate-500 text-xs mt-4">Redirecionaremos para o ambiente seguro do provedor escolhido.</p>
+          <p className="text-center text-slate-500 text-xs mt-4">Escaneie o QR Pix após clicar em pagar.</p>
         </div>
       </div>
+
+      {pixOpen && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-white/10 rounded-2xl p-6 w-full max-w-md relative">
+            <button className="absolute top-4 right-4 text-slate-400 hover:text-white" onClick={() => setPixOpen(false)}>
+              <X size={18} />
+            </button>
+            <h3 className="text-white font-bold text-lg mb-4">Pague com Pix</h3>
+            {qrBase64 ? (
+              <img src={`data:image/png;base64,${qrBase64}`} alt="QR Pix" className="w-64 h-64 mx-auto rounded-lg bg-white" />
+            ) : (
+              <div className="text-slate-400 text-sm text-center">Gerando QR...</div>
+            )}
+            {pixCode && (
+              <button
+                className="mt-4 w-full px-4 py-2 rounded-lg bg-slate-800 text-white flex items-center justify-center gap-2"
+                onClick={() => navigator.clipboard.writeText(pixCode)}
+              >
+                <Copy size={14} /> Copiar código Pix
+              </button>
+            )}
+            <div className="text-center text-slate-400 text-xs mt-3">
+              Status: {status === "approved" ? "Aprovado" : "Aguardando pagamento"}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
