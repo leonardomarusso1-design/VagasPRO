@@ -39,6 +39,8 @@ export default function Page() {
       if (bumpParam === "true") {
         localStorage.setItem("vagaspro_bump", "true");
       }
+      const credits = planParam === "PRO" ? 10 : 1;
+      localStorage.setItem("vagaspro_credits", String(credits));
       setStep(AppStep.DASHBOARD);
       return;
     }
@@ -72,6 +74,14 @@ export default function Page() {
 
   const handleQuizComplete = async (data: UserData) => {
     setUserData(data);
+    const creditsStr = localStorage.getItem("vagaspro_credits");
+    const credits = creditsStr ? parseInt(creditsStr, 10) : 0;
+    if (credits <= 0) {
+      alert("Você não possui créditos para gerar novos currículos. Selecione um plano para continuar.");
+      setStep(AppStep.CHECKOUT);
+      return;
+    }
+    localStorage.setItem("vagaspro_credits", String(credits - 1));
     setStep(AppStep.ANALYZING);
 
     const startTime = Date.now();

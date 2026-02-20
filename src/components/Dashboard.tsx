@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { UserData, ResumeContent, PlanType } from "@/types";
 import { ResumeTemplate } from "@/components/ResumeTemplate";
 import { Button } from "@/components/ui/Button";
@@ -16,6 +16,12 @@ export default function Dashboard({ data, content, plan, hasModernAccess }: Dash
     hasModernAccess ? "modern" : "classic"
   );
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [credits, setCredits] = useState<number>(0);
+
+  useEffect(() => {
+    const c = parseInt(localStorage.getItem("vagaspro_credits") || "0", 10);
+    setCredits(isNaN(c) ? 0 : c);
+  }, []);
 
   const handlePrint = () => {
     window.print();
@@ -77,6 +83,9 @@ export default function Dashboard({ data, content, plan, hasModernAccess }: Dash
                     )}
                   </div>
                 </div>
+              </div>
+              <div className="text-xs text-slate-400 mt-2">
+                Créditos de geração: <span className="font-bold text-white">{credits}</span>
               </div>
             </div>
           </div>
