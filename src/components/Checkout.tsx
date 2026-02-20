@@ -75,7 +75,24 @@ export const Checkout: React.FC<CheckoutProps> = ({
       });
       const data = await res.json();
       if (res.status >= 400) {
-        alert(typeof data?.error === "string" ? data.error : "Erro ao criar Pix. Verifique sua conta Mercado Pago.");
+        const msg = typeof data?.error === "string" ? data.error : "Erro ao criar Pix. Verifique sua conta Mercado Pago.";
+        alert(msg);
+        try {
+          const pref = await fetch("/api/mp/checkout", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              plan: isPro ? "PRO" : "BASIC",
+              hasBump: orderBumpActive,
+              buyerEmail: me.user.email,
+            }),
+          });
+          const pData = await pref.json();
+          if (pref.ok && pData?.url) {
+            window.open(pData.url, "_blank");
+            alert("Abrimos a página do Mercado Pago com seu QR Pix.");
+          }
+        } catch {}
         setIsProcessing(false);
         return;
       }

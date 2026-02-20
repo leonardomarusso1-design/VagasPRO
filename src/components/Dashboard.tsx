@@ -23,6 +23,12 @@ export default function Dashboard({ data, content, plan, hasModernAccess }: Dash
     setCredits(isNaN(c) ? 0 : c);
   }, []);
 
+  useEffect(() => {
+    if (!hasModernAccess && activeLayout === "modern") {
+      setActiveLayout("classic");
+    }
+  }, [hasModernAccess, activeLayout]);
+
   const handlePrint = () => {
     const c = parseInt(localStorage.getItem("vagaspro_credits") || "0", 10);
     if (isNaN(c) || c <= 0) {
