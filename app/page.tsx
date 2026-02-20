@@ -123,6 +123,9 @@ export default function Page() {
         window.location.href = data.url;
       } else {
         setPaymentProcessing(false);
+        if (data?.error) {
+          alert(typeof data.error === "string" ? data.error : JSON.stringify(data.error));
+        }
       }
     } catch {
       setPaymentProcessing(false);

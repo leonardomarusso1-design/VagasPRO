@@ -18,9 +18,19 @@ export async function POST(req: NextRequest) {
     const amount =
       plan === "PRO" ? 2270 : hasBump ? 840 : 570; // valores em centavos BRL
 
-    const baseUrl =
-      process.env.NEXTAUTH_URL ||
-      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+    // Base URL robusto: usa NEXTAUTH_URL se for uma URL válida; senão VERCEL_URL; senão localhost
+    const getBaseUrl = () => {
+      const raw = process.env.NEXTAUTH_URL;
+      if (raw) {
+        try {
+          const u = new URL(raw);
+          if (u.protocol.startsWith("http")) return u.origin;
+        } catch {}
+      }
+      if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+      return "http://localhost:3000";
+    };
+    const baseUrl = getBaseUrl();
 
     const form = new URLSearchParams();
     form.append("mode", "payment");
