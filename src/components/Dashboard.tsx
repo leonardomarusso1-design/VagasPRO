@@ -106,23 +106,21 @@ export default function Dashboard({ data, content, plan, hasModernAccess }: Dash
                   Clássico (P&B)
                 </button>
 
-                <button
-                  onClick={() => hasModernAccess && setActiveLayout("modern")}
-                  disabled={!hasModernAccess}
-                  className={`w-full text-left px-4 py-3 text-sm rounded-lg font-medium transition-all flex items-center justify-between ${
-                    activeLayout === "modern"
-                      ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20"
-                      : !hasModernAccess
-                      ? "text-slate-600 cursor-not-allowed opacity-50"
-                      : "text-slate-400 hover:bg-white/5 hover:text-white"
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-2 h-2 rounded-full ${activeLayout === "modern" ? "bg-white" : "bg-slate-600"}`} />
-                    Moderno
-                  </div>
-                  {!hasModernAccess && <Lock size={12} />}
-                </button>
+                {hasModernAccess && (
+                  <button
+                    onClick={() => setActiveLayout("modern")}
+                    className={`w-full text-left px-4 py-3 text-sm rounded-lg font-medium transition-all flex items-center justify-between ${
+                      activeLayout === "modern"
+                        ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20"
+                        : "text-slate-400 hover:bg-white/5 hover:text-white"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-2 h-2 rounded-full ${activeLayout === "modern" ? "bg-white" : "bg-slate-600"}`} />
+                      Moderno
+                    </div>
+                  </button>
+                )}
               </div>
             </div>
             

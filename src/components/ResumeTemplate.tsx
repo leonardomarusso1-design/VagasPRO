@@ -32,10 +32,18 @@ export const ResumeTemplate: React.FC<ResumeTemplateProps> = ({
       {/* Header */}
       <header className={`border-b-4 ${headerBorder} pb-6 mb-8 flex justify-between items-start`}>
         <div className="flex gap-6 items-center">
-          {isModern && data.photoUrl && (
-            <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-slate-100 shadow-sm shrink-0 print:w-20 print:h-20">
-              <img src={data.photoUrl} alt="Profile" className="w-full h-full object-cover" />
-            </div>
+          {isModern && (
+            data.photoUrl ? (
+              <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-slate-100 shadow-sm shrink-0 print:w-20 print:h-20">
+                <img src={data.photoUrl} alt="Profile" className="w-full h-full object-cover" />
+              </div>
+            ) : (
+              <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-slate-100 shadow-sm shrink-0 print:w-20 print:h-20 bg-slate-200 flex items-center justify-center">
+                <span className="text-slate-700 font-extrabold text-3xl">
+                  {(data.fullName || "C").charAt(0)}
+                </span>
+              </div>
+            )
           )}
           <div>
             <p className={`text-lg ${accentColor} font-bold uppercase tracking-wider mb-1`}>{displayExperiences[0]?.role || "Profissional"}</p>

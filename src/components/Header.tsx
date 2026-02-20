@@ -58,7 +58,13 @@ export function Header() {
 
   return (
     <div className="h-12 border-b border-white/10 bg-slate-900/70 backdrop-blur flex items-center justify-between px-4">
-      <div className="font-bold text-white tracking-tight">
+      <div
+        className="font-bold text-white tracking-tight cursor-pointer select-none"
+        onClick={() => {
+          window.location.href = window.location.origin;
+        }}
+        aria-label="Voltar para a página inicial"
+      >
         Vagas<span className="text-blue-500">PRO</span>
       </div>
       <div className="flex items-center gap-4">
@@ -72,6 +78,38 @@ export function Header() {
         ) : user ? (
           <div className="flex items-center gap-3">
             <span className="text-slate-300 text-sm truncate max-w-[180px]">{user.email || user.name}</span>
+            <button
+              onClick={() => {
+                try {
+                  const saved = localStorage.getItem("vagaspro_data");
+                  if (!saved) {
+                    const demo = {
+                      fullName: "Cliente Demo",
+                      email: user.email || "demo@vagaspro.com",
+                      phone: "(11) 99999-9999",
+                      location: "São Paulo, SP",
+                      summary: "Resumo profissional de demonstração.",
+                      photoUrl: "",
+                      linkedin: "",
+                      experiences: [
+                        { id: "1", company: "Empresa X", role: "Analista", period: "2022-2024", description: "Atividades de demonstração." },
+                      ],
+                      education: [
+                        { id: "1", institution: "Universidade Y", degree: "Graduação", year: "2021" },
+                      ],
+                      skills: ["Comunicação", "Excel", "Organização"],
+                      languages: ["Português"],
+                    };
+                    localStorage.setItem("vagaspro_data", JSON.stringify(demo));
+                  }
+                } catch {}
+                localStorage.setItem("vagaspro_step", "DASHBOARD");
+                window.location.href = `${window.location.origin}?resume=true`;
+              }}
+              className="px-3 py-1.5 text-sm rounded-lg bg-slate-800 text-white hover:bg-slate-700"
+            >
+              Área do Cliente
+            </button>
             <button
               onClick={handleLogout}
               className="text-slate-400 hover:text-red-400 text-sm flex items-center gap-1"
