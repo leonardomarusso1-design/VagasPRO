@@ -18,10 +18,15 @@ export async function POST(req: NextRequest) {
     const amount =
       plan === "PRO" ? 2270 : hasBump ? 840 : 570; // valores em centavos BRL
 
+    const baseUrl =
+      process.env.NEXTAUTH_URL ||
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+
     const form = new URLSearchParams();
     form.append("mode", "payment");
-    form.append("success_url", `${process.env.NEXTAUTH_URL || "http://localhost:3000"}?success=true&plan=${plan}`);
-    form.append("cancel_url", `${process.env.NEXTAUTH_URL || "http://localhost:3000"}?success=false`);
+    form.append("success_url", `${baseUrl}?success=true&plan=${plan}&bump=${hasBump ? "true" : "false"}`);
+    form.append("cancel_url", `${baseUrl}?success=false`);
+    form.append("payment_method_types[]", "pix");
     form.append("line_items[0][price_data][currency]", "brl");
     form.append("line_items[0][price_data][product_data][name]", `VagasPRO ${plan}${hasBump ? " + Bump" : ""}`);
     form.append("line_items[0][price_data][unit_amount]", String(amount));

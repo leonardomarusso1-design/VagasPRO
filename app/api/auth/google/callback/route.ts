@@ -3,7 +3,10 @@ import { NextRequest, NextResponse } from "next/server";
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const code = url.searchParams.get("code");
-  const redirectUri = `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/api/auth/google/callback`;
+  const baseUrl =
+    process.env.NEXTAUTH_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+  const redirectUri = `${baseUrl}/api/auth/google/callback`;
 
   if (!code) return NextResponse.json({ error: "code ausente" }, { status: 400 });
 
@@ -33,7 +36,7 @@ export async function GET(req: NextRequest) {
   });
   const user = await userRes.json();
 
-  const response = NextResponse.redirect(`${process.env.NEXTAUTH_URL || "http://localhost:3000"}?google=true`);
+  const response = NextResponse.redirect(`${baseUrl}?google=true`);
   response.cookies.set("vagaspro_user", JSON.stringify(user), {
     httpOnly: true,
     secure: true,

@@ -10,6 +10,7 @@ interface CheckoutProps {
   onPayment: () => void;
   isProcessing: boolean;
   onBack: () => void;
+  onPlanChange: (plan: PlanType) => void;
 }
 
 export const Checkout: React.FC<CheckoutProps> = ({
@@ -19,6 +20,7 @@ export const Checkout: React.FC<CheckoutProps> = ({
   onPayment,
   isProcessing,
   onBack,
+  onPlanChange,
 }) => {
   const isPro = plan === PlanType.PRO;
   const basePrice = isPro ? 22.7 : 5.7;
@@ -38,6 +40,26 @@ export const Checkout: React.FC<CheckoutProps> = ({
           >
             <ArrowLeft size={16} /> Voltar
           </button>
+
+          {/* Plan Selector */}
+          <div className="bg-slate-900 border border-white/10 rounded-2xl p-2 shadow-xl flex gap-2">
+            <button
+              onClick={() => onPlanChange(PlanType.BASIC)}
+              className={`flex-1 px-4 py-3 rounded-xl text-sm font-bold transition-colors ${
+                !isPro ? "bg-blue-600 text-white" : "bg-slate-800 text-slate-300 hover:text-white"
+              }`}
+            >
+              Plano Básico
+            </button>
+            <button
+              onClick={() => onPlanChange(PlanType.PRO)}
+              className={`flex-1 px-4 py-3 rounded-xl text-sm font-bold transition-colors ${
+                isPro ? "bg-blue-600 text-white" : "bg-slate-800 text-slate-300 hover:text-white"
+              }`}
+            >
+              Plano PRO
+            </button>
+          </div>
 
           <div>
             <h1 className="text-3xl font-bold text-white mb-2">Finalizar Pedido</h1>

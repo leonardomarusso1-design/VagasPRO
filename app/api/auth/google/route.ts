@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
-  const redirect = url.searchParams.get("redirect") || `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/api/auth/google/callback`;
+  const baseUrl =
+    process.env.NEXTAUTH_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+  const redirect = url.searchParams.get("redirect") || `${baseUrl}/api/auth/google/callback`;
 
   if (!process.env.GOOGLE_CLIENT_ID) {
     return NextResponse.json({ error: "GOOGLE_CLIENT_ID não configurado" }, { status: 500 });

@@ -35,6 +35,10 @@ export default function Page() {
     if (params.get("success") === "true") {
       const planParam = params.get("plan");
       setPlan(planParam === "PRO" ? PlanType.PRO : PlanType.BASIC);
+      const bumpParam = params.get("bump");
+      if (bumpParam === "true") {
+        localStorage.setItem("vagaspro_bump", "true");
+      }
       setStep(AppStep.DASHBOARD);
       return;
     }
@@ -161,6 +165,7 @@ export default function Page() {
         onPayment={handlePayment}
         isProcessing={paymentProcessing}
         onBack={() => setStep(AppStep.PREVIEW)}
+        onPlanChange={(p) => setSelectedPlanForCheckout(p)}
       />
     );
   }
