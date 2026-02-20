@@ -18,7 +18,37 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
             </div>
             Vagas<span className="text-blue-500">PRO</span>
           </div>
-          <Button variant="ghost" className="text-sm font-semibold hidden md:block" onClick={onStart}>
+          <Button
+            variant="ghost"
+            className="text-sm font-semibold hidden md:block"
+            onClick={() => {
+              try {
+                const saved = localStorage.getItem("vagaspro_data");
+                if (!saved) {
+                  const demo = {
+                    fullName: "Cliente Demo",
+                    email: "demo@vagaspro.com",
+                    phone: "(11) 99999-9999",
+                    location: "São Paulo, SP",
+                    summary: "Resumo profissional de demonstração.",
+                    photoUrl: "",
+                    linkedin: "",
+                    experiences: [
+                      { id: "1", company: "Empresa X", role: "Analista", period: "2022-2024", description: "Atividades de demonstração." },
+                    ],
+                    education: [
+                      { id: "1", institution: "Universidade Y", degree: "Graduação", year: "2021" },
+                    ],
+                    skills: ["Comunicação", "Excel", "Organização"],
+                    languages: ["Português"],
+                  };
+                  localStorage.setItem("vagaspro_data", JSON.stringify(demo));
+                }
+              } catch {}
+              localStorage.setItem("vagaspro_step", "DASHBOARD");
+              window.location.href = `${window.location.origin}?resume=true`;
+            }}
+          >
             Área do Cliente
           </Button>
         </div>

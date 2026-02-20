@@ -24,6 +24,14 @@ export default function Dashboard({ data, content, plan, hasModernAccess }: Dash
   }, []);
 
   const handlePrint = () => {
+    const c = parseInt(localStorage.getItem("vagaspro_credits") || "0", 10);
+    if (isNaN(c) || c <= 0) {
+      alert("Você não possui créditos suficientes para baixar o PDF.");
+      return;
+    }
+    const next = c - 1;
+    localStorage.setItem("vagaspro_credits", String(next));
+    setCredits(next);
     window.print();
   };
 
