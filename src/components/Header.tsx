@@ -19,20 +19,15 @@ export function Header() {
       setLoading(false);
     })();
 
-    const readCredits = () => {
-      const p = localStorage.getItem("vagaspro_plan");
-      setPlan(p);
-      const c = parseInt(localStorage.getItem("vagaspro_credits") || "0", 10);
-      setCredits(isNaN(c) ? 0 : c);
-    };
-    readCredits();
-    const onStorage = () => readCredits();
-    window.addEventListener("storage", onStorage);
-    const t = setInterval(readCredits, 2000);
-    return () => {
-      window.removeEventListener("storage", onStorage);
-      clearInterval(t);
-    };
+    (async () => {
+      try {
+        const res = await fetch("/api/private/me", { cache: "no-store" });
+        const data = await res.json();
+        const p = data?.profile;
+        setPlan(p?.plan === "pro" ? "PRO" : p?.plan === "basic" ? "BASIC" : null);
+        setCredits(0);
+      } catch {}
+    })();
   }, []);
 
   const handleLogin = async () => {
@@ -80,31 +75,7 @@ export function Header() {
             <span className="text-slate-300 text-sm truncate max-w-[180px]">{user.email || user.name}</span>
             <button
               onClick={() => {
-                try {
-                  const saved = localStorage.getItem("vagaspro_data");
-                  if (!saved) {
-                    const demo = {
-                      fullName: "Cliente Demo",
-                      email: user.email || "demo@vagaspro.com",
-                      phone: "(11) 99999-9999",
-                      location: "São Paulo, SP",
-                      summary: "Resumo profissional de demonstração.",
-                      photoUrl: "",
-                      linkedin: "",
-                      experiences: [
-                        { id: "1", company: "Empresa X", role: "Analista", period: "2022-2024", description: "Atividades de demonstração." },
-                      ],
-                      education: [
-                        { id: "1", institution: "Universidade Y", degree: "Graduação", year: "2021" },
-                      ],
-                      skills: ["Comunicação", "Excel", "Organização"],
-                      languages: ["Português"],
-                    };
-                    localStorage.setItem("vagaspro_data", JSON.stringify(demo));
-                  }
-                } catch {}
-                localStorage.setItem("vagaspro_step", "DASHBOARD");
-                window.location.href = `${window.location.origin}?resume=true`;
+                window.location.href = `${window.location.origin}/dashboard`;
               }}
               className="px-3 py-1.5 text-sm rounded-lg bg-slate-800 text-white hover:bg-slate-700"
             >

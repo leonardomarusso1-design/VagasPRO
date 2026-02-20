@@ -17,10 +17,18 @@ export default function Dashboard({ data, content, plan, hasModernAccess }: Dash
   );
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [credits, setCredits] = useState<number>(0);
+  const [hasAccess, setHasAccess] = useState<boolean>(hasModernAccess);
 
   useEffect(() => {
-    const c = parseInt(localStorage.getItem("vagaspro_credits") || "0", 10);
-    setCredits(isNaN(c) ? 0 : c);
+    (async () => {
+      try {
+        const res = await fetch("/api/private/me", { cache: "no-store" });
+        const data = await res.json();
+        const p = data?.profile;
+        const modern = p?.plan === "pro";
+        setHasAccess(!!modern);
+      } catch {}
+    })();
   }, []);
 
   useEffect(() => {
@@ -30,14 +38,7 @@ export default function Dashboard({ data, content, plan, hasModernAccess }: Dash
   }, [hasModernAccess, activeLayout]);
 
   const handlePrint = () => {
-    const c = parseInt(localStorage.getItem("vagaspro_credits") || "0", 10);
-    if (isNaN(c) || c <= 0) {
-      alert("Você não possui créditos suficientes para baixar o PDF.");
-      return;
-    }
-    const next = c - 1;
-    localStorage.setItem("vagaspro_credits", String(next));
-    setCredits(next);
+    /* validar no backend depois */
     window.print();
   };
 
@@ -120,7 +121,7 @@ export default function Dashboard({ data, content, plan, hasModernAccess }: Dash
                   Clássico (P&B)
                 </button>
 
-                {hasModernAccess && (
+                {hasAccess && (
                   <button
                     onClick={() => setActiveLayout("modern")}
                     className={`w-full text-left px-4 py-3 text-sm rounded-lg font-medium transition-all flex items-center justify-between ${
