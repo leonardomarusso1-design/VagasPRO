@@ -107,10 +107,11 @@ export default function Page() {
     }
   };
 
-  const handlePayment = async () => {
+  const handlePayment = async (provider: "stripe" | "mercadopago") => {
     try {
       setPaymentProcessing(true);
-      const res = await fetch("/api/checkout", {
+      const endpoint = provider === "mercadopago" ? "/api/mp/checkout" : "/api/checkout";
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

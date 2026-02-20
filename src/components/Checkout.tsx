@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { PlanType } from "@/types";
 import { Check, ShieldCheck, Zap, ArrowLeft, Star } from "lucide-react";
@@ -7,7 +7,7 @@ interface CheckoutProps {
   plan: PlanType;
   orderBumpActive: boolean;
   onToggleBump: () => void;
-  onPayment: () => void;
+  onPayment: (provider: "stripe" | "mercadopago") => void;
   isProcessing: boolean;
   onBack: () => void;
   onPlanChange: (plan: PlanType) => void;
@@ -22,6 +22,7 @@ export const Checkout: React.FC<CheckoutProps> = ({
   onBack,
   onPlanChange,
 }) => {
+  const [provider, setProvider] = useState<"stripe" | "mercadopago">("mercadopago");
   const isPro = plan === PlanType.PRO;
   const basePrice = isPro ? 22.7 : 5.7;
   const bumpPrice = 2.7;
@@ -127,7 +128,7 @@ export const Checkout: React.FC<CheckoutProps> = ({
 
           <div className="flex items-center gap-2 text-xs text-slate-500 justify-center">
             <ShieldCheck size={14} className="text-emerald-500" />
-            Pagamento seguro via Stripe. Acesso liberado imediatamente.
+            Pagamento seguro. Acesso liberado imediatamente.
           </div>
         </div>
 
@@ -136,12 +137,36 @@ export const Checkout: React.FC<CheckoutProps> = ({
           <h3 className="text-xl font-bold text-white mb-6">Pagamento</h3>
           
           <div className="space-y-4 mb-8">
-            <div className="p-4 border border-blue-500/50 bg-blue-500/10 rounded-xl flex items-center justify-between cursor-pointer">
+            <div
+              className={`p-4 rounded-xl flex items-center justify-between cursor-pointer ${
+                provider === "mercadopago"
+                  ? "border border-emerald-500/50 bg-emerald-500/10"
+                  : "border border-white/10 bg-slate-950/50"
+              }`}
+              onClick={() => setProvider("mercadopago")}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-4 h-4 rounded-full border-2 border-emerald-500 flex items-center justify-center">
+                  <div className="w-2 h-2 bg-emerald-500 rounded-full" />
+                </div>
+                <span className="font-medium text-white">Mercado Pago (Pix recomendado)</span>
+              </div>
+              <img src="https://http2.mlstatic.com/frontend-assets/mp-web-navigation/ui-library/svgs/mercadopago-logo.svg" alt="Mercado Pago" className="h-6 opacity-70 invert" />
+            </div>
+
+            <div
+              className={`p-4 rounded-xl flex items-center justify-between cursor-pointer ${
+                provider === "stripe"
+                  ? "border border-blue-500/50 bg-blue-500/10"
+                  : "border border-white/10 bg-slate-950/50"
+              }`}
+              onClick={() => setProvider("stripe")}
+            >
               <div className="flex items-center gap-3">
                 <div className="w-4 h-4 rounded-full border-2 border-blue-500 flex items-center justify-center">
                   <div className="w-2 h-2 bg-blue-500 rounded-full" />
                 </div>
-                <span className="font-medium text-white">Cartão de Crédito / PIX</span>
+                <span className="font-medium text-white">Stripe (Cartão / Pix quando disponível)</span>
               </div>
               <img src="https://upload.wikimedia.org/wikipedia/commons/b/ba/Stripe_Logo%2C_revised_2016.svg" alt="Stripe" className="h-6 opacity-70 invert" />
             </div>
@@ -155,7 +180,7 @@ export const Checkout: React.FC<CheckoutProps> = ({
           </div>
 
           <Button 
-            onClick={onPayment} 
+            onClick={() => onPayment(provider)} 
             fullWidth 
             size="lg" 
             variant="secondary"
@@ -165,9 +190,7 @@ export const Checkout: React.FC<CheckoutProps> = ({
             {isProcessing ? "Processando..." : `Pagar R$ ${total.toFixed(2).replace(".", ",")} Agora`}
           </Button>
           
-          <p className="text-center text-slate-500 text-xs mt-4">
-            Ao clicar em pagar, você será redirecionado para o ambiente seguro do Stripe.
-          </p>
+          <p className="text-center text-slate-500 text-xs mt-4">Redirecionaremos para o ambiente seguro do provedor escolhido.</p>
         </div>
       </div>
     </div>
