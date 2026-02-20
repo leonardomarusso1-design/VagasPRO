@@ -41,6 +41,37 @@ export default function Page() {
       }
       const credits = planParam === "PRO" ? 10 : 1;
       localStorage.setItem("vagaspro_credits", String(credits));
+      if (!localStorage.getItem("vagaspro_data")) {
+        const demo: UserData = {
+          fullName: "Cliente Demo",
+          email: "demo@vagaspro.com",
+          phone: "(11) 99999-9999",
+          location: "São Paulo, SP",
+          summary: "Resumo profissional de demonstração.",
+          photoUrl: "",
+          linkedin: "",
+          experiences: [
+            { id: "1", company: "Empresa X", role: "Analista", period: "2022-2024", description: "Atividades de demonstração." },
+          ],
+          education: [
+            { id: "1", institution: "Universidade Y", degree: "Graduação", year: "2021" },
+          ],
+          skills: ["Comunicação", "Excel", "Organização"],
+          languages: ["Português"],
+        };
+        setUserData(demo);
+        localStorage.setItem("vagaspro_data", JSON.stringify(demo));
+      }
+      if (!localStorage.getItem("vagaspro_content")) {
+        const demoContent: ResumeContent = {
+          optimizedSummary: "Resumo otimizado de demonstração com foco em resultados.",
+          optimizedExperiences: [],
+          atsScore: 85,
+          keywordsFound: ["Demonstração", "Experiência", "Resultados"],
+        };
+        setResumeContent(demoContent);
+        localStorage.setItem("vagaspro_content", JSON.stringify(demoContent));
+      }
       setStep(AppStep.DASHBOARD);
       return;
     }
