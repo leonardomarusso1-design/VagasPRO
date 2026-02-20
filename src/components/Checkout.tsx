@@ -22,6 +22,7 @@ export const Checkout: React.FC<CheckoutProps> = ({
   const [pixOpen, setPixOpen] = useState(false);
   const [qrBase64, setQrBase64] = useState<string | null>(null);
   const [pixCode, setPixCode] = useState<string | null>(null);
+  const [qrUrl, setQrUrl] = useState<string | null>(null);
   const [paymentId, setPaymentId] = useState<string | null>(null);
   const [status, setStatus] = useState<string>("pending");
   const isPro = plan === PlanType.PRO;
@@ -73,11 +74,17 @@ export const Checkout: React.FC<CheckoutProps> = ({
         }),
       });
       const data = await res.json();
-      if (data?.qr_base64 && data?.payment_id) {
-        setQrBase64(data.qr_base64);
-        setPixCode(data.qr_code || null);
+      if ((data?.qr_base64 || data?.qr_code) && data?.payment_id) {
+        if (data.qr_base64) setQrBase64(data.qr_base64);
+        const code = data.qr_code || null;
+        setPixCode(code);
+        if (!data.qr_base64 && code) {
+          setQrUrl(`https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=${encodeURIComponent(code)}`);
+        }
         setPaymentId(String(data.payment_id));
         setPixOpen(true);
+      } else {
+        alert("Falha ao gerar Pix. Tente novamente mais tarde.");
       }
       setIsProcessing(false);
     } catch {
@@ -229,6 +236,8 @@ export const Checkout: React.FC<CheckoutProps> = ({
             <h3 className="text-white font-bold text-lg mb-4">Pague com Pix</h3>
             {qrBase64 ? (
               <img src={`data:image/png;base64,${qrBase64}`} alt="QR Pix" className="w-64 h-64 mx-auto rounded-lg bg-white" />
+            ) : qrUrl ? (
+              <img src={qrUrl} alt="QR Pix" className="w-64 h-64 mx-auto rounded-lg bg-white" />
             ) : (
               <div className="text-slate-400 text-sm text-center">Gerando QR...</div>
             )}
@@ -240,6 +249,9 @@ export const Checkout: React.FC<CheckoutProps> = ({
                 <Copy size={14} /> Copiar código Pix
               </button>
             )}
+            <div className="text-center text-slate-500 text-xs mt-2">
+              Se o QR não aparecer, use “Copiar código Pix” e cole no app do seu banco.
+            </div>
             <div className="text-center text-slate-400 text-xs mt-3">
               Status: {status === "approved" ? "Aprovado" : "Aguardando pagamento"}
             </div>

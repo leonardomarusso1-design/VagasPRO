@@ -74,18 +74,6 @@ export default function Page() {
 
   const handleQuizComplete = async (data: UserData) => {
     setUserData(data);
-    // Se estiver logado e sem créditos, impedir geração
-    try {
-      const me = await fetch("/api/auth/me").then((r) => r.json());
-      if (me?.user) {
-        const credits = parseInt(localStorage.getItem("vagaspro_credits") || "0", 10);
-        if (!credits || credits <= 0) {
-          alert("Você não possui créditos para gerar novos currículos. Selecione um plano para continuar.");
-          setStep(AppStep.CHECKOUT);
-          return;
-        }
-      }
-    } catch {}
     setStep(AppStep.ANALYZING);
     
     const startTime = Date.now();
@@ -97,16 +85,6 @@ export default function Page() {
       setTimeout(() => {
         setResumeContent(generated);
         setStep(AppStep.PREVIEW);
-        // Se estiver logado, consumir 1 crédito
-        (async () => {
-          try {
-            const me = await fetch("/api/auth/me").then((r) => r.json());
-            if (me?.user) {
-              const credits = parseInt(localStorage.getItem("vagaspro_credits") || "0", 10);
-              if (credits > 0) localStorage.setItem("vagaspro_credits", String(credits - 1));
-            }
-          } catch {}
-        })();
       }, Math.max(0, minDelay - elapsed));
     } catch (e) {
       console.error(e);
