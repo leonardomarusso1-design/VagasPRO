@@ -74,6 +74,11 @@ export const Checkout: React.FC<CheckoutProps> = ({
         }),
       });
       const data = await res.json();
+      if (res.status >= 400) {
+        alert(typeof data?.error === "string" ? data.error : "Erro ao criar Pix. Verifique sua conta Mercado Pago.");
+        setIsProcessing(false);
+        return;
+      }
       if ((data?.qr_base64 || data?.qr_code) && data?.payment_id) {
         if (data.qr_base64) setQrBase64(data.qr_base64);
         const code = data.qr_code || null;

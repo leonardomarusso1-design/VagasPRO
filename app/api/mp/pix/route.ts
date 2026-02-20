@@ -15,6 +15,12 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    if (!buyerEmail) {
+      return new Response(JSON.stringify({ error: "Email do pagador é obrigatório" }), {
+        status: 400,
+      });
+    }
+
     const amount = plan === "PRO" ? 2270 : hasBump ? 840 : 570;
 
     const res = await fetch("https://api.mercadopago.com/v1/payments", {
@@ -22,18 +28,29 @@ export async function POST(req: NextRequest) {
       headers: {
         Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}`,
         "Content-Type": "application/json",
+        "X-Idempotency-Key": `${buyerEmail}-${Date.now()}`,
       },
       body: JSON.stringify({
         transaction_amount: amount / 100,
         description: `VagasPRO ${plan}${hasBump ? " + Bump" : ""}`,
         payment_method_id: "pix",
-        payer: buyerEmail ? { email: buyerEmail } : {},
+        payer: {
+          email: buyerEmail,
+          first_name: "Cliente",
+          last_name: "VagasPRO",
+        },
+        external_reference: `vagaspro-${plan}-${hasBump ? "bump" : "nobump"}`,
       }),
     });
 
     const data = await res.json();
     if (!res.ok) {
-      return new Response(JSON.stringify({ error: data }), { status: 400 });
+      const message =
+        data?.message ||
+        data?.error ||
+        data?.cause?.[0]?.description ||
+        "Erro ao criar pagamento Pix";
+      return new Response(JSON.stringify({ error: message, raw: data }), { status: 400 });
     }
 
     const qrBase64 =
