@@ -41,7 +41,19 @@ export default function Page() {
       }
       const credits = planParam === "PRO" ? 10 : 1;
       localStorage.setItem("vagaspro_credits", String(credits));
-      if (!localStorage.getItem("vagaspro_data")) {
+      try {
+        const saved = localStorage.getItem("vagaspro_data");
+        if (saved) {
+          const parsed: UserData = JSON.parse(saved);
+          if (parsed && parsed.fullName) {
+            setUserData(parsed);
+          } else {
+            throw new Error("invalid");
+          }
+        } else {
+          throw new Error("missing");
+        }
+      } catch {
         const demo: UserData = {
           fullName: "Cliente Demo",
           email: "demo@vagaspro.com",
@@ -62,7 +74,22 @@ export default function Page() {
         setUserData(demo);
         localStorage.setItem("vagaspro_data", JSON.stringify(demo));
       }
-      if (!localStorage.getItem("vagaspro_content")) {
+      try {
+        const savedContent = localStorage.getItem("vagaspro_content");
+        if (savedContent) {
+          const parsedContent: ResumeContent = JSON.parse(savedContent);
+          setResumeContent(parsedContent);
+        } else {
+          const demoContent: ResumeContent = {
+            optimizedSummary: "Resumo otimizado de demonstração com foco em resultados.",
+            optimizedExperiences: [],
+            atsScore: 85,
+            keywordsFound: ["Demonstração", "Experiência", "Resultados"],
+          };
+          setResumeContent(demoContent);
+          localStorage.setItem("vagaspro_content", JSON.stringify(demoContent));
+        }
+      } catch {
         const demoContent: ResumeContent = {
           optimizedSummary: "Resumo otimizado de demonstração com foco em resultados.",
           optimizedExperiences: [],
