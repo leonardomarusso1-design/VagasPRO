@@ -36,23 +36,44 @@ export async function POST(req: NextRequest) {
     form.append("mode", "payment");
     form.append("success_url", `${baseUrl}?success=true&plan=${plan}&bump=${hasBump ? "true" : "false"}`);
     form.append("cancel_url", `${baseUrl}?success=false`);
-    form.append("payment_method_types[]", "pix");
     form.append("line_items[0][price_data][currency]", "brl");
     form.append("line_items[0][price_data][product_data][name]", `VagasPRO ${plan}${hasBump ? " + Bump" : ""}`);
     form.append("line_items[0][price_data][unit_amount]", String(amount));
     form.append("line_items[0][quantity]", "1");
 
-    const res = await fetch("https://api.stripe.com/v1/checkout/sessions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}`,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: form.toString(),
-    });
+    const createSession = async (includePix: boolean) => {
+      const payload = new URLSearchParams(form);
+      if (includePix) {
+        payload.append("payment_method_types[]", "pix");
+      }
+      return fetch("https://api.stripe.com/v1/checkout/sessions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: payload.toString(),
+      });
+    };
+
+    // Tenta criar sessão com Pix explicitamente
+    let res = await createSession(true);
 
     const data = await res.json();
     if (!res.ok) {
+      // Fallback: se Pix não estiver elegível, cria sessão sem listar manualmente (métodos dinâmicos do Stripe)
+      const msg = (data?.error?.message || "").toLowerCase();
+      if (msg.includes("payment method type provided") && msg.includes("pix")) {
+        res = await createSession(false);
+        const dataFallback = await res.json();
+        if (!res.ok) {
+          return new Response(JSON.stringify({ error: dataFallback }), { status: 400 });
+        }
+        return new Response(JSON.stringify({ url: dataFallback.url, id: dataFallback.id }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
       return new Response(JSON.stringify({ error: data }), { status: 400 });
     }
 
