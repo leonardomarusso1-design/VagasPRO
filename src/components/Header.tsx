@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { createClient } from "@supabase/supabase-js";
 import { LogOut } from "lucide-react";
 
 export function Header() {
@@ -32,9 +33,14 @@ export function Header() {
 
   const handleLogin = async () => {
     try {
-      const res = await fetch("/api/auth/google");
-      const data = await res.json();
-      if (data?.url) window.location.href = data.url;
+      const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
+      const base =
+        process.env.NEXTAUTH_URL ||
+        (typeof window !== "undefined" ? window.location.origin : "http://localhost:3000");
+      await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: base },
+      });
     } catch {}
   };
 
