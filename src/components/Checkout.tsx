@@ -23,36 +23,12 @@ export const Checkout: React.FC<CheckoutProps> = ({
   const [qrBase64, setQrBase64] = useState<string | null>(null);
   const [pixCode, setPixCode] = useState<string | null>(null);
   const [qrUrl, setQrUrl] = useState<string | null>(null);
-  const [paymentId, setPaymentId] = useState<string | null>(null);
-  const [status, setStatus] = useState<string>("pending");
   const isPro = plan === PlanType.PRO;
   const basePrice = isPro ? 22.7 : 5.7;
   const bumpPrice = 2.7;
   const total = basePrice + (orderBumpActive ? bumpPrice : 0);
 
-  useEffect(() => {
-    let timer: any;
-    if (pixOpen && paymentId) {
-      timer = setInterval(async () => {
-        try {
-          const res = await fetch(`/api/mp/status?payment_id=${paymentId}`);
-          const data = await res.json();
-          if (data?.status === "approved") {
-            setStatus("approved");
-            const params = new URLSearchParams({
-              success: "true",
-              plan: isPro ? "PRO" : "BASIC",
-              bump: orderBumpActive ? "true" : "false",
-            });
-            window.location.href = `${window.location.origin}?${params.toString()}`;
-          }
-        } catch {}
-      }, 3000);
-    }
-    return () => {
-      if (timer) clearInterval(timer);
-    };
-  }, [pixOpen, paymentId, isPro, orderBumpActive]);
+  useEffect(() => {}, []);
 
   const handlePayPix = async () => {
     try {
@@ -64,49 +40,21 @@ export const Checkout: React.FC<CheckoutProps> = ({
         setIsProcessing(false);
         return;
       }
-      const res = await fetch("/api/mp/pix", {
+      const res = await fetch("/api/asaas/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           plan: isPro ? "PRO" : "BASIC",
-          hasBump: orderBumpActive,
           buyerEmail: me.user.email,
         }),
       });
       const data = await res.json();
-      if (res.status >= 400) {
-        const msg = typeof data?.error === "string" ? data.error : "Erro ao criar Pix. Verifique sua conta Mercado Pago.";
-        alert(msg);
-        try {
-          const pref = await fetch("/api/mp/checkout", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              plan: isPro ? "PRO" : "BASIC",
-              hasBump: orderBumpActive,
-              buyerEmail: me.user.email,
-            }),
-          });
-          const pData = await pref.json();
-          if (pref.ok && pData?.url) {
-            window.open(pData.url, "_blank");
-            alert("Abrimos a página do Mercado Pago com seu QR Pix.");
-          }
-        } catch {}
-        setIsProcessing(false);
-        return;
-      }
-      if ((data?.qr_base64 || data?.qr_code) && data?.payment_id) {
-        if (data.qr_base64) setQrBase64(data.qr_base64);
-        const code = data.qr_code || null;
-        setPixCode(code);
-        if (!data.qr_base64 && code) {
-          setQrUrl(`https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=${encodeURIComponent(code)}`);
-        }
-        setPaymentId(String(data.payment_id));
+      if (res.ok && data?.url) {
+        window.open(data.url, "_blank");
         setPixOpen(true);
       } else {
-        alert("Falha ao gerar Pix. Tente novamente mais tarde.");
+        const msg = typeof data?.error === "string" ? data.error : "Erro ao obter link de pagamento Asaas.";
+        alert(msg);
       }
       setIsProcessing(false);
     } catch {
@@ -228,9 +176,9 @@ export const Checkout: React.FC<CheckoutProps> = ({
                 <div className="w-4 h-4 rounded-full border-2 border-emerald-500 flex items-center justify-center">
                   <div className="w-2 h-2 bg-emerald-500 rounded-full" />
                 </div>
-                <span className="font-medium text-white">Mercado Pago (Pix recomendado)</span>
+                <span className="font-medium text-white">Asaas (Pix recomendado)</span>
               </div>
-              <img src="https://http2.mlstatic.com/frontend-assets/mp-web-navigation/ui-library/svgs/mercadopago-logo.svg" alt="Mercado Pago" className="h-6 opacity-70 invert" />
+              <img src="https://www.asaas.com/assets/images/asaas-logo.svg" alt="Asaas" className="h-6 opacity-70 invert" />
             </div>
           </div>
 
@@ -245,7 +193,7 @@ export const Checkout: React.FC<CheckoutProps> = ({
             {isProcessing ? "Processando..." : `Pagar R$ ${total.toFixed(2).replace(".", ",")} Agora`}
           </Button>
           
-          <p className="text-center text-slate-500 text-xs mt-4">Escaneie o QR Pix após clicar em pagar.</p>
+          <p className="text-center text-slate-500 text-xs mt-4">O pagamento abre em nova aba no Asaas. A ativação do plano ocorre via webhook.</p>
         </div>
       </div>
 
@@ -256,27 +204,7 @@ export const Checkout: React.FC<CheckoutProps> = ({
               <X size={18} />
             </button>
             <h3 className="text-white font-bold text-lg mb-4">Pague com Pix</h3>
-            {qrBase64 ? (
-              <img src={`data:image/png;base64,${qrBase64}`} alt="QR Pix" className="w-64 h-64 mx-auto rounded-lg bg-white" />
-            ) : qrUrl ? (
-              <img src={qrUrl} alt="QR Pix" className="w-64 h-64 mx-auto rounded-lg bg-white" />
-            ) : (
-              <div className="text-slate-400 text-sm text-center">Gerando QR...</div>
-            )}
-            {pixCode && (
-              <button
-                className="mt-4 w-full px-4 py-2 rounded-lg bg-slate-800 text-white flex items-center justify-center gap-2"
-                onClick={() => navigator.clipboard.writeText(pixCode)}
-              >
-                <Copy size={14} /> Copiar código Pix
-              </button>
-            )}
-            <div className="text-center text-slate-500 text-xs mt-2">
-              Se o QR não aparecer, use “Copiar código Pix” e cole no app do seu banco.
-            </div>
-            <div className="text-center text-slate-400 text-xs mt-3">
-              Status: {status === "approved" ? "Aprovado" : "Aguardando pagamento"}
-            </div>
+            <div className="text-center text-slate-400 text-sm text-center">O checkout do Asaas foi aberto em nova aba. Conclua o pagamento para liberar o acesso automaticamente.</div>
           </div>
         </div>
       )}
